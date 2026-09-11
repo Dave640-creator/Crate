@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crate — dig for music</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14110F;
+    --card:#1E1A16;
+    --card-hi:#26211C;
+    --gold:#E8A33D;
+    --rust:#C4432B;
+    --cream:#F2ECE4;
+    --muted:#8C8377;
+    --line:#332C25;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--cream);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding-bottom:110px;
+  }
+  ::selection{background:var(--gold);color:var(--ink);}
+
+  /* header */
+  header{
+    padding:36px 24px 20px;
+    max-width:760px;
+    margin:0 auto;
+  }
+  .wordmark{
+    font-family:'Fraunces',serif;
+    font-size:34px;
+    font-weight:600;
+    letter-spacing:-0.5px;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .wordmark .dot{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--rust);
+    display:inline-block;
+    transform:translateY(-14px);
+  }
+  .tagline{
+    color:var(--muted);
+    font-size:14px;
+    margin-top:4px;
+  }
+
+  .search-row{
+    margin-top:24px;
+    display:flex;
+    gap:8px;
+  }
+  .search-row input{
+    flex:1;
+    background:var(--card);
+    border:1px solid var(--line);
+    color:var(--cream);
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    padding:14px 16px;
+    border-radius:10px;
+    outline:none;
+    transition:border-color .15s ease;
+  }
+  .search-row input:focus{border-color:var(--gold);}
+  .search-row input::placeholder{color:var(--muted);}
+  .search-row button{
+    background:var(--gold);
+    color:var(--ink);
+    border:none;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    padding:0 22px;
+    border-radius:10px;
+    cursor:pointer;
+    transition:filter .15s ease;
+  }
+  .search-row button:hover{filter:brightness(1.08);}
+  .search-row button:disabled{opacity:.5;cursor:default;}
+
+  /* tabs */
+  .tabs{
+    display:flex;
+    gap:22px;
+    margin-top:26px;
+    border-bottom:1px solid var(--line);
+    max-width:760px;
+    margin-left:auto;
+    margin-right:auto;
+    padding:0 24px;
+  }
+  .tab{
+    font-size:14px;
+    font-weight:600;
+    color:var(--muted);
+    padding:10px 0;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .tab.active{color:var(--cream);border-color:var(--rust);}
+  .tab .count{
+    background:var(--card-hi);
+    color:var(--muted);
+    font-size:11px;
+    padding:1px 7px;
+    border-radius:20px;
+  }
+  .tab.active .count{color:var(--gold);}
+
+  main{
+    max-width:760px;
+    margin:0 auto;
+    padding:20px 24px 40px;
+  }
+
+  .state-msg{
+    color:var(--muted);
+    font-size:14px;
+    padding:40px 4px;
+    text-align:center;
+    line-height:1.6;
+  }
+  .state-msg .big{
+    font-family:'Fraunces',serif;
+    font-style:italic;
+    font-size:19px;
+    color:var(--cream);
+    display:block;
+    margin-bottom:6px;
+  }
+
+  .track{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:10px;
+    border-radius:12px;
+    transition:background .12s ease;
+  }
+  .track:hover{background:var(--card);}
+  .track + .track{margin-top:2px;}
+
+  .art{
+    width:52px;height:52px;
+    border-radius:6px;
+    object-fit:cover;
+    background:var(--card-hi);
+    flex-shrink:0;
+  }
+  .meta{
+    flex:1;
+    min-width:0;
+  }
+  .meta .name{
+    font-size:15px;
+    font-weight:500;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .meta .sub{
+    font-size:13px;
+    color:var(--muted);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    margin-top:2px;
+  }
+  .track-actions{
+    display:flex;
+    gap:6px;
+    flex-shrink:0;
+  }
+  .icon-btn{
+    width:36px;height:36px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--cream);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .icon-btn:hover{border-color:var(--gold);}
+  .icon-btn.playing{background:var(--gold);border-color:var(--gold);color:var(--ink);}
+  .icon-btn.saved{color:var(--rust);border-color:var(--rust);}
+  .icon-btn:disabled{opacity:.35;cursor:default;}
+  .icon-btn svg{width:15px;height:15px;}
+
+  /* now playing bar */
+  .now-playing{
+    position:fixed;
+    bottom:0;left:0;right:0;
+    background:var(--card);
+    border-top:1px solid var(--line);
+    padding:12px 20px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    transform:translateY(100%);
+    transition:transform .25s ease;
+    z-index:10;
+  }
+  .now-playing.show{transform:translateY(0);}
+
+  .vinyl{
+    width:44px;height:44px;
+    border-radius:50%;
+    background:radial-gradient(circle at center, var(--ink) 0 6px, #2b2620 6px 8px, var(--ink) 8px 9px, #2b2620 9px 100%);
+    background-size:cover;
+    flex-shrink:0;
+    position:relative;
+    animation:spin 3s linear infinite;
+    animation-play-state:paused;
+    overflow:hidden;
+  }
+  .vinyl.spin{animation-play-state:running;}
+  .vinyl img{
+    width:100%;height:100%;object-fit:cover;border-radius:50%;
+    opacity:.9;
+  }
+  .vinyl::after{
+    content:'';
+    position:absolute;top:50%;left:50%;
+    width:6px;height:6px;
+    background:var(--ink);
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .np-meta{flex:1;min-width:0;}
+  .np-meta .name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .np-meta .sub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  .np-progress{
+    flex:2;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .np-progress span{font-size:11px;color:var(--muted);width:32px;text-align:center;flex-shrink:0;}
+  .bar{
+    flex:1;
+    height:4px;
+    background:var(--line);
+    border-radius:4px;
+    overflow:hidden;
+    cursor:pointer;
+  }
+  .bar-fill{
+    height:100%;
+    background:var(--gold);
+    width:0%;
+  }
+
+  @media (max-width:600px){
+    .np-progress{display:none;}
+    .meta .sub, .np-meta .sub{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wordmark">Crate<span class="dot"></span></div>
+  <div class="tagline">Search, preview, and keep the tracks worth keeping.</div>
+  <div class="search-row">
+    <input id="searchInput" type="text" placeholder="Search for an artist, song, or album…" autocomplete="off">
+    <button id="searchBtn">Search</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="search">Search</div>
+  <div class="tab" data-tab="saved">Saved <span class="count" id="savedCount">0</span></div>
+</div>
+
+<main>
+  <div id="searchPanel"></div>
+  <div id="savedPanel" style="display:none;"></div>
+</main>
+
+<div class="now-playing" id="nowPlaying">
+  <div class="vinyl" id="vinyl"><img id="npArt" src="" alt=""></div>
+  <div class="np-meta">
+    <div class="name" id="npName">—</div>
+    <div class="sub" id="npSub">—</div>
+  </div>
+  <div class="np-progress">
+    <span id="npCurrent">0:00</span>
+    <div class="bar" id="npBar"><div class="bar-fill" id="npBarFill"></div></div>
+    <span id="npDuration">0:30</span>
+  </div>
+  <button class="icon-btn" id="npPlayBtn" style="width:40px;height:40px;"></button>
+</div>
+
+<audio id="audio" preload="none"></audio>
+
+<script>
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('searchBtn');
+const searchPanel = document.getElementById('searchPanel');
+const savedPanel = document.getElementById('savedPanel');
+const savedCountEl = document.getElementById('savedCount');
+const tabs = document.querySelectorAll('.tab');
+
+const audio = document.getElementById('audio');
+const nowPlaying = document.getElementById('nowPlaying');
+const vinyl = document.getElementById('vinyl');
+const npArt = document.getElementById('npArt');
+const npName = document.getElementById('npName');
+const npSub = document.getElementById('npSub');
+const npPlayBtn = document.getElementById('npPlayBtn');
+const npBar = document.getElementById('npBar');
+const npBarFill = document.getElementById('npBarFill');
+const npCurrent = document.getElementById('npCurrent');
+const npDuration = document.getElementById('npDuration');
+
+let savedTracks = [];
+let currentTrack = null;
+let isPlaying = false;
+
+const PLAY_ICON = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+const PAUSE_ICON = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>`;
+const HEART_OUTLINE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-9.5-9C0.7 8.3 2 5 5.2 4.3 7.4 3.8 9.6 4.8 12 7.5c2.4-2.7 4.6-3.7 6.8-3.2C22 5 23.3 8.3 21.5 12c-2.5 4.5-9.5 9-9.5 9z"/></svg>`;
+const HEART_FILLED = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-9.5-9C0.7 8.3 2 5 5.2 4.3 7.4 3.8 9.6 4.8 12 7.5c2.4-2.7 4.6-3.7 6.8-3.2C22 5 23.3 8.3 21.5 12c-2.5 4.5-9.5 9-9.5 9z"/></svg>`;
+const TRASH_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>`;
+
+npPlayBtn.innerHTML = PLAY_ICON;
+
+// ---------- storage ----------
+async function loadSaved(){
+  try{
+    const res = await window.storage.get('saved-tracks', false);
+    savedTracks = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    savedTracks = [];
+  }
+  savedCountEl.textContent = savedTracks.length;
+}
+
+async function persistSaved(){
+  savedCountEl.textContent = savedTracks.length;
+  try{
+    await window.storage.set('saved-tracks', JSON.stringify(savedTracks), false);
+  }catch(e){
+    console.error('Could not save', e);
+  }
+}
+
+function isSaved(id){
+  return savedTracks.some(t => t.trackId === id);
+}
+
+async function toggleSave(track){
+  if(isSaved(track.trackId)){
+    savedTracks = savedTracks.filter(t => t.trackId !== track.trackId);
+  } else {
+    savedTracks.unshift(track);
+  }
+  await persistSaved();
+  renderSearchResults(lastResults);
+  renderSaved();
+}
+
+// ---------- search ----------
+let lastResults = [];
+
+// iTunes Search API is inconsistent with CORS headers on fetch(), so we use
+// its JSONP mode instead (?callback=...), which browsers can always load
+// via a <script> tag regardless of CORS.
+let jsonpCounter = 0;
+function jsonpRequest(url){
+  return new Promise((resolve, reject) => {
+    const cbName = 'crateCb_' + (jsonpCounter++) + '_' + Date.now();
+    const script = document.createElement('script');
+    let settled = false;
+
+    const cleanup = () => {
+      delete window[cbName];
+      script.remove();
+      clearTimeout(timer);
+    };
+
+    window[cbName] = (data) => {
+      settled = true;
+      cleanup();
+      resolve(data);
+    };
+
+    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+    script.onerror = () => {
+      if(!settled){ cleanup(); reject(new Error('JSONP script failed to load')); }
+    };
+    document.body.appendChild(script);
+
+    const timer = setTimeout(() => {
+      if(!settled){ cleanup(); reject(new Error('JSONP request timed out')); }
+    }, 10000);
+  });
+}
+
+async function runSearch(){
+  const term = searchInput.value.trim();
+  if(!term) return;
+  switchTab('search');
+  searchPanel.innerHTML = `<div class="state-msg"><span class="big">Digging…</span>looking through the crate for "${escapeHtml(term)}"</div>`;
+  searchBtn.disabled = true;
+  try{
+    const url = 'https://itunes.apple.com/search?media=music&limit=25&term=' + encodeURIComponent(term);
+    const data = await jsonpRequest(url);
+    lastResults = (data.results || []).filter(r => r.previewUrl);
+    renderSearchResults(lastResults);
+  }catch(e){
+    searchPanel.innerHTML = `<div class="state-msg"><span class="big">Couldn't reach the crate.</span>Check your connection and try again in a moment.</div>`;
+  }finally{
+    searchBtn.disabled = false;
+  }
+}
+
+function renderSearchResults(results){
+  if(!results || !results.length){
+    if(lastResults.length === 0 && searchInput.value.trim() !== ''){
+      searchPanel.innerHTML = `<div class="state-msg"><span class="big">Nothing here.</span>Try a different spelling or a broader search.</div>`;
+    }
+    return;
+  }
+  searchPanel.innerHTML = results.map(trackRowHtml).join('');
+  attachRowHandlers(searchPanel, results);
+}
+
+function renderSaved(){
+  if(!savedTracks.length){
+    savedPanel.innerHTML = `<div class="state-msg"><span class="big">Your crate is empty.</span>Save tracks from search to find them here later.</div>`;
+    return;
+  }
+  savedPanel.innerHTML = savedTracks.map(t => trackRowHtml(t, true)).join('');
+  attachRowHandlers(savedPanel, savedTracks, true);
+}
+
+function trackRowHtml(t, savedView){
+  const art = (t.artworkUrl100 || '').replace('100x100', '160x160');
+  return `
+  <div class="track" data-id="${t.trackId}">
+    <img class="art" src="${art}" alt="" loading="lazy">
+    <div class="meta">
+      <div class="name">${escapeHtml(t.trackName || 'Untitled')}</div>
+      <div class="sub">${escapeHtml(t.artistName || '')} · ${escapeHtml(t.collectionName || '')}</div>
+    </div>
+    <div class="track-actions">
+      <button class="icon-btn play-btn" title="Play preview">${PLAY_ICON}</button>
+      ${savedView
+        ? `<button class="icon-btn remove-btn" title="Remove">${TRASH_ICON}</button>`
+        : `<button class="icon-btn save-btn ${isSaved(t.trackId) ? 'saved' : ''}" title="Save">${isSaved(t.trackId) ? HEART_FILLED : HEART_OUTLINE}</button>`
+      }
+    </div>
+  </div>`;
+}
+
+function attachRowHandlers(panel, list, savedView){
+  panel.querySelectorAll('.track').forEach(row => {
+    const id = Number(row.getAttribute('data-id'));
+    const track = list.find(t => t.trackId === id);
+    if(!track) return;
+
+    row.querySelector('.play-btn').addEventListener('click', () => playTrack(track));
+
+    const saveBtn = row.querySelector('.save-btn');
+    if(saveBtn) saveBtn.addEventListener('click', () => toggleSave(track));
+
+    const removeBtn = row.querySelector('.remove-btn');
+    if(removeBtn) removeBtn.addEventListener('click', () => toggleSave(track));
+  });
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ---------- playback ----------
+function playTrack(track){
+  if(currentTrack && currentTrack.trackId === track.trackId){
+    togglePlayPause();
+    return;
+  }
+  currentTrack = track;
+  audio.src = track.previewUrl;
+  audio.play();
+  npArt.src = (track.artworkUrl100 || '').replace('100x100', '160x160');
+  npName.textContent = track.trackName || 'Untitled';
+  npSub.textContent = track.artistName || '';
+  nowPlaying.classList.add('show');
+  updateAllPlayIcons();
+}
+
+function togglePlayPause(){
+  if(audio.paused){ audio.play(); } else { audio.pause(); }
+}
+
+audio.addEventListener('play', () => {
+  isPlaying = true;
+  vinyl.classList.add('spin');
+  npPlayBtn.innerHTML = PAUSE_ICON;
+  updateAllPlayIcons();
+});
+audio.addEventListener('pause', () => {
+  isPlaying = false;
+  vinyl.classList.remove('spin');
+  npPlayBtn.innerHTML = PLAY_ICON;
+  updateAllPlayIcons();
+});
+audio.addEventListener('ended', () => {
+  isPlaying = false;
+  vinyl.classList.remove('spin');
+  npPlayBtn.innerHTML = PLAY_ICON;
+  npBarFill.style.width = '0%';
+  npCurrent.textContent = '0:00';
+  updateAllPlayIcons();
+});
+audio.addEventListener('timeupdate', () => {
+  if(!audio.duration) return;
+  const pct = (audio.currentTime / audio.duration) * 100;
+  npBarFill.style.width = pct + '%';
+  npCurrent.textContent = formatTime(audio.currentTime);
+  npDuration.textContent = formatTime(audio.duration);
+});
+
+npBar.addEventListener('click', (e) => {
+  if(!audio.duration) return;
+  const rect = npBar.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  audio.currentTime = pct * audio.duration;
+});
+
+npPlayBtn.addEventListener('click', togglePlayPause);
+
+function formatTime(sec){
+  sec = Math.floor(sec || 0);
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+function updateAllPlayIcons(){
+  document.querySelectorAll('.track').forEach(row => {
+    const id = Number(row.getAttribute('data-id'));
+    const btn = row.querySelector('.play-btn');
+    if(!btn) return;
+    if(currentTrack && id === currentTrack.trackId && isPlaying){
+      btn.classList.add('playing');
+      btn.innerHTML = PAUSE_ICON;
+    } else {
+      btn.classList.remove('playing');
+      btn.innerHTML = PLAY_ICON;
+    }
+  });
+}
+
+// ---------- tabs ----------
+function switchTab(name){
+  tabs.forEach(t => t.classList.toggle('active', t.getAttribute('data-tab') === name));
+  searchPanel.style.display = name === 'search' ? 'block' : 'none';
+  savedPanel.style.display = name === 'saved' ? 'block' : 'none';
+  if(name === 'saved') renderSaved();
+}
+
+tabs.forEach(t => t.addEventListener('click', () => switchTab(t.getAttribute('data-tab'))));
+
+searchBtn.addEventListener('click', runSearch);
+searchInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') runSearch(); });
+
+// ---------- init ----------
+(async function init(){
+  await loadSaved();
+  searchPanel.innerHTML = `<div class="state-msg"><span class="big">Start digging.</span>Search any artist, song, or album to hear a preview.</div>`;
+})();
+</script>
+
+</body>
+</html>
